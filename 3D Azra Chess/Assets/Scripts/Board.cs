@@ -11,7 +11,12 @@ public class Board : MonoBehaviour
     [SerializeField] private float yOffset = 0.2f;
     [SerializeField] private Vector3 boardCenter = Vector3.zero;
 
+    [Header("Prefabs & Materials")]
+    [SerializeField] private GameObject[] prefabs;
+    [SerializeField] private Material[] teamMaterials;
+
     // Logic
+    private Piece[,] pieces;
     private const int TILE_COUNT_X = 8;
     private const int TILE_COUNT_Y = 8;
     private GameObject[,] tiles;
@@ -23,6 +28,7 @@ public class Board : MonoBehaviour
     void Awake()
     {
         GenerateAllTiles(tileSize, TILE_COUNT_X, TILE_COUNT_Y);
+        SpawnAllPieces();
     }
 
     private void Update()
@@ -66,7 +72,7 @@ public class Board : MonoBehaviour
     }
     #endregion
 
-    //Generate the Board
+    #region Generate Board
     private void GenerateAllTiles(float tileSize, int tileCountX, int tileCountY)
     {
         yOffset += transform.position.y;
@@ -104,8 +110,56 @@ public class Board : MonoBehaviour
 
         return tileObject;
     }
+    #endregion
 
-    //Operations
+    #region Piece Spawning
+    private void SpawnAllPieces()
+    {
+        pieces = new Piece[TILE_COUNT_X, TILE_COUNT_Y];
+
+        int whiteTeam = 0; int blackTeam = 1;
+
+        //White Team
+        pieces[0, 0] = SpawnSinglePiece(PieceType.Rook, whiteTeam);
+        pieces[1, 0] = SpawnSinglePiece(PieceType.Knight, whiteTeam);
+        pieces[2, 0] = SpawnSinglePiece(PieceType.Bishop, whiteTeam);
+        pieces[3, 0] = SpawnSinglePiece(PieceType.Queen, whiteTeam);
+        pieces[4, 0] = SpawnSinglePiece(PieceType.King, whiteTeam);
+        pieces[5, 0] = SpawnSinglePiece(PieceType.Bishop, whiteTeam);
+        pieces[6, 0] = SpawnSinglePiece(PieceType.Knight, whiteTeam);
+        pieces[7, 0] = SpawnSinglePiece(PieceType.Rook, whiteTeam);
+        for (int i = 0; i < TILE_COUNT_X; i++)
+            pieces[i, 1] = SpawnSinglePiece(PieceType.Pawn, whiteTeam);
+    }
+
+    private Piece SpawnSinglePiece(PieceType type, int team)
+    {
+        Piece p = Instantiate(prefabs[(int)type - 1], transform).GetComponent<Piece>();
+
+        p.type = type;
+        p.team = team;
+        p.GetComponent<MeshRenderer>().material = teamMaterials[team];
+
+        return p;
+    }
+    #endregion
+
+    #region Position Pieces
+    private void PositionAllPieces()
+    {
+        for (int x = 0; x < TILE_COUNT_X; x++)
+            for (int y = 0; y < TILE_COUNT_Y; y++)
+                if (pieces[x, y] != null)
+                    PositionSinglePiece(x, y, true);
+    }
+
+    private void PositionSinglePiece(int x, int y, bool force = false)
+    {
+
+    }
+    #endregion
+
+    #region Operations
     private Vector2Int LookupTileIndex(GameObject hitInfo)
     {
         for (int x = 0; x < TILE_COUNT_X; x++)
@@ -114,4 +168,5 @@ public class Board : MonoBehaviour
         
         return -Vector2Int.one; //Invalid
     }
+    #endregion
 }
