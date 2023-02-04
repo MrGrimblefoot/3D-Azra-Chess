@@ -29,6 +29,7 @@ public class Board : MonoBehaviour
     {
         GenerateAllTiles(tileSize, TILE_COUNT_X, TILE_COUNT_Y);
         SpawnAllPieces();
+        PositionAllPieces();
     }
 
     private void Update()
@@ -130,6 +131,18 @@ public class Board : MonoBehaviour
         pieces[7, 0] = SpawnSinglePiece(PieceType.Rook, whiteTeam);
         for (int i = 0; i < TILE_COUNT_X; i++)
             pieces[i, 1] = SpawnSinglePiece(PieceType.Pawn, whiteTeam);
+
+        //Black Team
+        pieces[0, 7] = SpawnSinglePiece(PieceType.Rook, blackTeam);
+        pieces[1, 7] = SpawnSinglePiece(PieceType.Knight, blackTeam);
+        pieces[2, 7] = SpawnSinglePiece(PieceType.Bishop, blackTeam);
+        pieces[3, 7] = SpawnSinglePiece(PieceType.Queen, blackTeam);
+        pieces[4, 7] = SpawnSinglePiece(PieceType.King, blackTeam);
+        pieces[5, 7] = SpawnSinglePiece(PieceType.Bishop, blackTeam);
+        pieces[6, 7] = SpawnSinglePiece(PieceType.Knight, blackTeam);
+        pieces[7, 7] = SpawnSinglePiece(PieceType.Rook, blackTeam);
+        for (int i = 0; i < TILE_COUNT_X; i++)
+            pieces[i, 6] = SpawnSinglePiece(PieceType.Pawn, blackTeam);
     }
 
     private Piece SpawnSinglePiece(PieceType type, int team)
@@ -155,7 +168,14 @@ public class Board : MonoBehaviour
 
     private void PositionSinglePiece(int x, int y, bool force = false)
     {
+        pieces[x, y].currentX = x;
+        pieces[x, y].currentY = y;
+        pieces[x, y].transform.position = GetTileCenter(x, y);
+    }
 
+    private Vector3 GetTileCenter(int x, int y)
+    {
+        return new Vector3(x * tileSize, yOffset, y * tileSize) - bounds + new Vector3(tileSize / 2, 0, tileSize / 2);
     }
     #endregion
 
