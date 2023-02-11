@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public enum PieceType
@@ -17,8 +18,40 @@ public class Piece : MonoBehaviour
     public int team;
     public int currentX;
     public int currentY;
+    public float smoothingMoveSpeed = 10;
+    public float smoothingScaleSpeed = 10;
     public PieceType type;
 
     private Vector3 desiredPosition;
-    private Vector3 desiredScale;
+    private Vector3 desiredScale = new Vector3(0.16f, 0.16f, 0.16f);
+
+    private void Update()
+    {
+        transform.position = Vector3.Lerp(transform.position, desiredPosition, Time.deltaTime * smoothingMoveSpeed);
+        transform.localScale = Vector3.Lerp(transform.localScale, desiredScale, Time.deltaTime * smoothingScaleSpeed);
+    }
+
+    private List<Vector2Int> GetAvailableMoves(ref Piece[,] board, int tileCountX, int tileCountY)
+    {
+        List<Vector2Int> r = new List<Vector2Int>();
+
+        //Test moves:
+        r.Add(new Vector2Int(3,3));
+        r.Add(new Vector2Int(3,4));
+        r.Add(new Vector2Int(4,3));
+        r.Add(new Vector2Int(4,4));
+
+        return r;
+    }
+
+    public virtual void SetPosition(Vector3 position, bool force = false)
+    {
+        desiredPosition = position;
+        if (force) { transform.position = desiredPosition; }
+    }
+    public virtual void SetScale(Vector3 scale, bool force = false)
+    {
+        desiredScale = scale;
+        if (force) { transform.localScale = desiredScale; }
+    }
 }

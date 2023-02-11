@@ -9,6 +9,7 @@ public class Board : MonoBehaviour
     [SerializeField] private Material tileMaterial;
     [SerializeField] private float tileSize = 1;
     [SerializeField] private float yOffset = 0.2f;
+    [SerializeField] private float deathSpacing = 0.3f;
     [SerializeField] private Vector3 boardCenter = Vector3.zero;
 
     [Header("Prefabs & Materials")]
@@ -17,11 +18,16 @@ public class Board : MonoBehaviour
 
     // Logic
     private Piece[,] pieces;
+    [SerializeField] private Piece currentlyDragging;
+    [SerializeField] private bool canSelectNewPiece;
+    private List<Piece> deadWhites = new List<Piece>();
+    private List<Piece> deadBlacks = new List<Piece>();
     private const int TILE_COUNT_X = 8;
     private const int TILE_COUNT_Y = 8;
     private GameObject[,] tiles;
     private Camera currentCamera;
     private Vector2Int currentHover;
+    private Vector2Int hitPosition;
     private Vector3 bounds;
 
     #region MonoBehavior Functions
@@ -45,7 +51,7 @@ public class Board : MonoBehaviour
         if (Physics.Raycast(ray, out info, 100, LayerMask.GetMask("Tile", "Hover")))
         {
             // Get the indexes of the tile i've hit
-            Vector2Int hitPosition = LookupTileIndex(info.collider.gameObject);
+            hitPosition = LookupTileIndex(info.collider.gameObject);
 
             // If we're hovering a tile after not hovering any tiles
             if (currentHover == -Vector2Int.one)
@@ -61,6 +67,34 @@ public class Board : MonoBehaviour
                 currentHover = hitPosition;
                 tiles[hitPosition.x, hitPosition.y].layer = 7;
             }
+
+            // If we click the mouse
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (currentlyDragging != null)
+                {
+                    Vector2Int previousPosition = new Vector2Int(currentlyDragging.currentX, currentlyDragging.currentY);
+
+                    bool validMove = MoveTo(currentlyDragging, hitPosition.x, hitPosition.y);
+                    if (!validMove)
+                    {
+                        currentlyDragging.SetPosition(GetTileCenter(previousPosition.x, previousPosition.y));
+                    }
+                    //else
+                    //{
+
+                    //}
+
+                    currentlyDragging = null;
+                    return;
+                }
+
+                if (currentlyDragging == null && pieces[hitPosition.x, hitPosition.y] != null)
+                {
+                    // Is it our turn?
+                    if (true) { GetCurrentPiece(); canSelectNewPiece = false; }
+                }
+            }
         }
         else
         {
@@ -68,6 +102,12 @@ public class Board : MonoBehaviour
             {
                 tiles[currentHover.x, currentHover.y].layer = 6;
                 currentHover = -Vector2Int.one;
+            }
+
+            if(currentlyDragging && Input.GetMouseButtonDown(0))
+            {
+                currentlyDragging.SetPosition(GetTileCenter(currentlyDragging.currentX, currentlyDragging.currentY));
+                currentlyDragging = null;
             }
         }
     }
@@ -170,7 +210,7 @@ public class Board : MonoBehaviour
     {
         pieces[x, y].currentX = x;
         pieces[x, y].currentY = y;
-        pieces[x, y].transform.position = GetTileCenter(x, y);
+        pieces[x, y].SetPosition(GetTileCenter(x, y), force);
     }
 
     private Vector3 GetTileCenter(int x, int y)
@@ -188,5 +228,49 @@ public class Board : MonoBehaviour
         
         return -Vector2Int.one; //Invalid
     }
+
+    private bool MoveTo(Piece cp, int x, int y)
+    {
+        Vector2Int previousPosition = new Vector2Int(cp.currentX, cp.currentY);
+
+        // Is there another piece on the target position
+        if(pieces[x, y] != null)
+        {
+            Piece ocp = pieces[x, y];
+
+            if(cp.team == ocp.team) { return false; }
+
+            // if it's the enemy team
+            // change things here so an attack & death animation happens and stuff
+            if(ocp.team == 0)
+            {
+                deadWhites.Add(ocp);
+                ocp.SetScale(Vector3.one * 0.1f);
+                ocp.SetPosition(new Vector3(8 * tileSize, yOffset, -1 * tileSize)
+                    - bounds
+                    + new Vector3(tileSize / 2, 0, tileSize / 2)
+                    + (Vector3.forward * deathSpacing) * deadWhites.Count);
+            }
+            else
+            {
+                deadBlacks.Add(ocp);
+                ocp.SetScale(Vector3.one * 0.1f);
+                ocp.SetPosition(new Vector3(-1 * tileSize, yOffset, 8 * tileSize)
+                    - bounds
+                    + new Vector3(tileSize / 2, 0, tileSize / 2)
+                    + (Vector3.back * deathSpacing) * deadBlacks.Count);
+            }
+
+        }
+
+        pieces[x, y] = cp;
+        pieces[previousPosition.x, previousPosition.y] = null;
+
+        PositionSinglePiece(x, y);
+
+        return true;
+    }
+
+    private void GetCurrentPiece() { currentlyDragging = pieces[hitPosition.x, hitPosition.y]; }
     #endregion
 }
