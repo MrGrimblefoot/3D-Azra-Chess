@@ -19,7 +19,7 @@ public class Board : MonoBehaviour
     // Logic
     private Piece[,] pieces;
     [SerializeField] private Piece currentlyDragging;
-    [SerializeField] private bool canSelectNewPiece;
+    private List<Vector2Int> availableMoves = new List<Vector2Int>();
     private List<Piece> deadWhites = new List<Piece>();
     private List<Piece> deadBlacks = new List<Piece>();
     private const int TILE_COUNT_X = 8;
@@ -76,23 +76,24 @@ public class Board : MonoBehaviour
                     Vector2Int previousPosition = new Vector2Int(currentlyDragging.currentX, currentlyDragging.currentY);
 
                     bool validMove = MoveTo(currentlyDragging, hitPosition.x, hitPosition.y);
-                    if (!validMove)
-                    {
-                        currentlyDragging.SetPosition(GetTileCenter(previousPosition.x, previousPosition.y));
-                    }
-                    //else
-                    //{
-
-                    //}
+                    if (!validMove) { currentlyDragging.SetPosition(GetTileCenter(previousPosition.x, previousPosition.y)); }
 
                     currentlyDragging = null;
+                    RemoveHighlightTiles();
                     return;
                 }
 
                 if (currentlyDragging == null && pieces[hitPosition.x, hitPosition.y] != null)
                 {
                     // Is it our turn?
-                    if (true) { GetCurrentPiece(); canSelectNewPiece = false; }
+                    if (true)
+                    {
+                        GetCurrentPiece();
+                        //Get a list of avaliable moves, and highlight tiles as well
+                        availableMoves = currentlyDragging.GetAvailableMoves(ref pieces, TILE_COUNT_X, TILE_COUNT_Y);
+
+                        HighlightTiles();
+                    }
                 }
             }
         }
@@ -108,9 +109,11 @@ public class Board : MonoBehaviour
             {
                 currentlyDragging.SetPosition(GetTileCenter(currentlyDragging.currentX, currentlyDragging.currentY));
                 currentlyDragging = null;
+                RemoveHighlightTiles();
             }
         }
     }
+
     #endregion
 
     #region Generate Board
@@ -216,6 +219,26 @@ public class Board : MonoBehaviour
     private Vector3 GetTileCenter(int x, int y)
     {
         return new Vector3(x * tileSize, yOffset, y * tileSize) - bounds + new Vector3(tileSize / 2, 0, tileSize / 2);
+    }
+    #endregion
+
+    #region Highlight Tiles
+    private void HighlightTiles()
+    {
+        for (int i = 0; i < availableMoves.Count; i++)
+        {
+            tiles[availableMoves[i].x, availableMoves[i].y].layer = LayerMask.NameToLayer("Highlight");
+        }
+    }
+
+    private void RemoveHighlightTiles()
+    {
+        for (int i = 0; i < availableMoves.Count; i++)
+        {
+            tiles[availableMoves[i].x, availableMoves[i].y].layer = LayerMask.NameToLayer("Tile");
+        }
+
+        availableMoves.Clear();
     }
     #endregion
 

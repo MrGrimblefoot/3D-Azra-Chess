@@ -307,41 +307,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0f3f6288f97ef734db494d1054631f8a, type: 3}
---- !u!1 &1452956509 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2474864548482540165, guid: 0f3f6288f97ef734db494d1054631f8a,
-    type: 3}
-  m_PrefabInstance: {fileID: 726256456}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1452956510
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1452956509}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dd9267bd501f4e9449c62fb8bf46c4a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  tileMaterial: {fileID: 2100000, guid: a167344e4195a6b41b1116559a1b5437, type: 2}
-  tileSize: 0.6
-  yOffset: 0.001
-  deathSpacing: 0.3
-  boardCenter: {x: 0, y: 0, z: 0}
-  prefabs:
-  - {fileID: 3101495521983284487, guid: fb39525603d9b304796d58ab209526ba, type: 3}
-  - {fileID: 6352979112890235348, guid: b7caba6c7e339f24489b5c521fe3a08e, type: 3}
-  - {fileID: 7906696359322149383, guid: ec02877bc4a1cf24f9fc2b0420b4490c, type: 3}
-  - {fileID: 786510350774743815, guid: b44c5d0b9c9e0324d9d97a80fb7dd6c6, type: 3}
-  - {fileID: 6592069207485148842, guid: 5bf35f3a817335e46b702dd683e9c22c, type: 3}
-  - {fileID: 4744203840945892256, guid: 1ce60d1e5e02c1e438deab13095860d7, type: 3}
-  teamMaterials:
-  - {fileID: 2100000, guid: 24aa1bf6738082b6b9cd6c6f3a5790ba, type: 2}
-  - {fileID: 2100000, guid: 3fed4e85a3c70c5cd8df71f2157829b4, type: 2}
-  currentlyDragging: {fileID: 0}
-  canSelectNewPiece: 1
 --- !u!1 &1722229590
 GameObject:
   m_ObjectHideFlags: 0
