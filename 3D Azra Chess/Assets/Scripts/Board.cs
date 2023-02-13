@@ -48,7 +48,7 @@ public class Board : MonoBehaviour
 
         RaycastHit info;
         Ray ray = currentCamera.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out info, 100, LayerMask.GetMask("Tile", "Hover")))
+        if (Physics.Raycast(ray, out info, 100, LayerMask.GetMask("Tile", "Hover", "Highlight")))
         {
             // Get the indexes of the tile i've hit
             hitPosition = LookupTileIndex(info.collider.gameObject);
@@ -88,7 +88,7 @@ public class Board : MonoBehaviour
                     // Is it our turn?
                     if (true)
                     {
-                        GetCurrentPiece();
+                        currentlyDragging = pieces[hitPosition.x, hitPosition.y];
                         //Get a list of avaliable moves, and highlight tiles as well
                         availableMoves = currentlyDragging.GetAvailableMoves(ref pieces, TILE_COUNT_X, TILE_COUNT_Y);
 
@@ -243,6 +243,15 @@ public class Board : MonoBehaviour
     #endregion
 
     #region Operations
+    private bool ContainsValidMoves(ref List<Vector2Int> moves, Vector2 pos)
+    {
+        for (int i = 0; i < moves.Count; i++)
+        {
+            if(moves[i].x == pos.x && moves[i].y == pos.y) { return true; }
+        }
+
+        return false;
+    }
     private Vector2Int LookupTileIndex(GameObject hitInfo)
     {
         for (int x = 0; x < TILE_COUNT_X; x++)
@@ -251,7 +260,6 @@ public class Board : MonoBehaviour
         
         return -Vector2Int.one; //Invalid
     }
-
     private bool MoveTo(Piece cp, int x, int y)
     {
         Vector2Int previousPosition = new Vector2Int(cp.currentX, cp.currentY);
@@ -293,7 +301,5 @@ public class Board : MonoBehaviour
 
         return true;
     }
-
-    private void GetCurrentPiece() { currentlyDragging = pieces[hitPosition.x, hitPosition.y]; }
     #endregion
 }
