@@ -63,7 +63,7 @@ public class Board : MonoBehaviour
             // If we were already hovering a tile, change the previous one
             if (currentHover != hitPosition)
             {
-                tiles[currentHover.x, currentHover.y].layer = 6;
+                tiles[currentHover.x, currentHover.y].layer = (ContainsValidMoves(ref availableMoves, currentHover)) ? 8 : 6; ;
                 currentHover = hitPosition;
                 tiles[hitPosition.x, hitPosition.y].layer = 7;
             }
@@ -101,7 +101,7 @@ public class Board : MonoBehaviour
         {
             if (currentHover != -Vector2Int.one)
             {
-                tiles[currentHover.x, currentHover.y].layer = 6;
+                tiles[currentHover.x, currentHover.y].layer = (ContainsValidMoves(ref availableMoves, currentHover)) ? 8 : 6;
                 currentHover = -Vector2Int.one;
             }
 
@@ -252,6 +252,7 @@ public class Board : MonoBehaviour
 
         return false;
     }
+
     private Vector2Int LookupTileIndex(GameObject hitInfo)
     {
         for (int x = 0; x < TILE_COUNT_X; x++)
@@ -260,8 +261,11 @@ public class Board : MonoBehaviour
         
         return -Vector2Int.one; //Invalid
     }
+
     private bool MoveTo(Piece cp, int x, int y)
     {
+        if(!ContainsValidMoves(ref availableMoves, new Vector2(x, y))) { return false; }
+
         Vector2Int previousPosition = new Vector2Int(cp.currentX, cp.currentY);
 
         // Is there another piece on the target position

@@ -31,7 +31,7 @@ public class Piece : MonoBehaviour
         transform.localScale = Vector3.Lerp(transform.localScale, desiredScale, Time.deltaTime * smoothingScaleSpeed);
     }
 
-    public List<Vector2Int> GetAvailableMoves(ref Piece[,] board, int tileCountX, int tileCountY)
+    public virtual List<Vector2Int> GetAvailableMoves(ref Piece[,] board, int tileCountX, int tileCountY)
     {
         List<Vector2Int> r = new List<Vector2Int>();
 
