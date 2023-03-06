@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class Board : MonoBehaviour
 {
@@ -11,6 +12,10 @@ public class Board : MonoBehaviour
     [SerializeField] private float yOffset = 0.2f;
     [SerializeField] private float deathSpacing = 0.3f;
     [SerializeField] private Vector3 boardCenter = Vector3.zero;
+    [SerializeField] private GameObject victoryScreen;
+    [SerializeField] private TextMeshProUGUI turnIndicator;
+    [SerializeField] private string whiteTurnText;
+    [SerializeField] private string blackTurnText;
 
     [Header("Prefabs & Materials")]
     [SerializeField] private GameObject[] prefabs;
@@ -29,10 +34,15 @@ public class Board : MonoBehaviour
     private Vector2Int currentHover;
     private Vector2Int hitPosition;
     private Vector3 bounds;
+    private bool isWhiteTurn;
 
     #region MonoBehavior Functions
     void Awake()
     {
+        isWhiteTurn = true;
+        victoryScreen.SetActive(false);
+        turnIndicator.gameObject.SetActive(true);
+
         GenerateAllTiles(tileSize, TILE_COUNT_X, TILE_COUNT_Y);
         SpawnAllPieces();
         PositionAllPieces();
@@ -45,6 +55,9 @@ public class Board : MonoBehaviour
             currentCamera = Camera.main;
             return;
         }
+
+        if (isWhiteTurn) { turnIndicator.text = whiteTurnText; }
+        else { turnIndicator.text = blackTurnText; }
 
         RaycastHit info;
         Ray ray = currentCamera.ScreenPointToRay(Input.mousePosition);
@@ -86,7 +99,7 @@ public class Board : MonoBehaviour
                 if (currentlyDragging == null && pieces[hitPosition.x, hitPosition.y] != null)
                 {
                     // Is it our turn?
-                    if (true)
+                    if ((pieces[hitPosition.x, hitPosition.y].team == 0 && isWhiteTurn) || (pieces[hitPosition.x, hitPosition.y].team == 1 && !isWhiteTurn))
                     {
                         currentlyDragging = pieces[hitPosition.x, hitPosition.y];
                         //Get a list of avaliable moves, and highlight tiles as well
@@ -242,6 +255,59 @@ public class Board : MonoBehaviour
     }
     #endregion
 
+    #region CheckMate
+    private void CheckMate(int team)
+    {
+        DisplayVictoryUI(team);
+    }
+
+    private void DisplayVictoryUI(int winningTeam)
+    {
+        victoryScreen.SetActive(true);
+        turnIndicator.gameObject.SetActive(false);
+        victoryScreen.transform.GetChild(winningTeam).gameObject.SetActive(true);
+    }
+
+    public void OnRestartButton()
+    {
+        //Take care of UI
+        victoryScreen.transform.GetChild(0).gameObject.SetActive(false);
+        victoryScreen.transform.GetChild(1).gameObject.SetActive(false);
+        victoryScreen.SetActive(false);
+        turnIndicator.gameObject.SetActive(true);
+
+        //Field Reset
+        currentlyDragging = null;
+        availableMoves = new List<Vector2Int>();
+
+        //Clean up
+        for (int x = 0; x < TILE_COUNT_X; x++)
+        {
+            for (int y = 0; y < TILE_COUNT_Y; y++)
+            {
+                if(pieces[x, y] != null) { Destroy(pieces[x, y].gameObject); }
+                pieces[x, y] = null;
+            }
+        }
+
+        for (int i = 0; i < deadWhites.Count; i++) { Destroy(deadWhites[i].gameObject); }
+        for (int i = 0; i < deadBlacks.Count; i++) { Destroy(deadBlacks[i].gameObject); }
+
+        deadWhites.Clear();
+        deadBlacks.Clear();
+
+        SpawnAllPieces();
+        PositionAllPieces();
+        isWhiteTurn = true;
+    }
+
+    public void OnExitButton()
+    {
+        print("Closing application!");
+        Application.Quit();
+    }
+    #endregion
+
     #region Operations
     private bool ContainsValidMoves(ref List<Vector2Int> moves, Vector2 pos)
     {
@@ -279,6 +345,8 @@ public class Board : MonoBehaviour
             // change things here so an attack & death animation happens and stuff
             if(ocp.team == 0)
             {
+                if(ocp.type == PieceType.King) { CheckMate(1); }
+
                 deadWhites.Add(ocp);
                 ocp.SetScale(Vector3.one * 0.1f);
                 ocp.SetPosition(new Vector3(8 * tileSize, yOffset, -1 * tileSize)
@@ -288,6 +356,8 @@ public class Board : MonoBehaviour
             }
             else
             {
+                if (ocp.type == PieceType.King) { CheckMate(0); }
+
                 deadBlacks.Add(ocp);
                 ocp.SetScale(Vector3.one * 0.1f);
                 ocp.SetPosition(new Vector3(-1 * tileSize, yOffset, 8 * tileSize)
@@ -302,6 +372,8 @@ public class Board : MonoBehaviour
         pieces[previousPosition.x, previousPosition.y] = null;
 
         PositionSinglePiece(x, y);
+
+        isWhiteTurn = !isWhiteTurn;
 
         return true;
     }

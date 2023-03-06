@@ -25,6 +25,12 @@ public class Piece : MonoBehaviour
     private Vector3 desiredPosition;
     private Vector3 desiredScale = new Vector3(0.16f, 0.16f, 0.16f);
 
+    private void Start()
+    {
+        if(team == 0) { transform.rotation = Quaternion.Euler(-90, -90, 0); }
+        else{ transform.rotation = Quaternion.Euler(-90, 90, 0); }
+    }
+
     private void Update()
     {
         transform.position = Vector3.Lerp(transform.position, desiredPosition, Time.deltaTime * smoothingMoveSpeed);

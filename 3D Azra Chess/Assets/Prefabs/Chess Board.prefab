@@ -104,6 +104,10 @@ MonoBehaviour:
   yOffset: 0.001
   deathSpacing: 0.3
   boardCenter: {x: 0, y: 0, z: 0}
+  victoryScreen: {fileID: 0}
+  turnIndicator: {fileID: 0}
+  whiteTurnText: White's Turn
+  blackTurnText: Black's Turn
   prefabs:
   - {fileID: 3101495521983284487, guid: fb39525603d9b304796d58ab209526ba, type: 3}
   - {fileID: 6352979112890235348, guid: b7caba6c7e339f24489b5c521fe3a08e, type: 3}

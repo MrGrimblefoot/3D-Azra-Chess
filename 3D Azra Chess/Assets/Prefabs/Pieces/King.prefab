@@ -99,4 +99,6 @@ MonoBehaviour:
   team: 0
   currentX: 0
   currentY: 0
+  smoothingMoveSpeed: 10
+  smoothingScaleSpeed: 10
   type: 0
