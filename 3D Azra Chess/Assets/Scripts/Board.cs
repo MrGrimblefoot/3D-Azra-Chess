@@ -4,8 +4,19 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
+#region Enums
+public enum SpecialMove
+{
+    None = 0,
+    EnPassant,
+    Castling,
+    Promotion
+}
+#endregion
+
 public class Board : MonoBehaviour
 {
+    #region Variables
     [Header("Visuals")]
     [SerializeField] private Material tileMaterial;
     [SerializeField] private float tileSize = 1;
@@ -23,7 +34,7 @@ public class Board : MonoBehaviour
 
     // Logic
     private Piece[,] pieces;
-    [SerializeField] private Piece currentlyDragging;
+    [SerializeField] private Piece currentlySelected;
     private List<Vector2Int> availableMoves = new List<Vector2Int>();
     private List<Piece> deadWhites = new List<Piece>();
     private List<Piece> deadBlacks = new List<Piece>();
@@ -35,6 +46,9 @@ public class Board : MonoBehaviour
     private Vector2Int hitPosition;
     private Vector3 bounds;
     private bool isWhiteTurn;
+    private SpecialMove specialMove;
+    private List<Vector2Int[]> moveList = new List<Vector2Int[]>();
+    #endregion
 
     #region MonoBehavior Functions
     void Awake()
@@ -84,26 +98,28 @@ public class Board : MonoBehaviour
             // If we click the mouse
             if (Input.GetMouseButtonDown(0))
             {
-                if (currentlyDragging != null)
+                if (currentlySelected != null)
                 {
-                    Vector2Int previousPosition = new Vector2Int(currentlyDragging.currentX, currentlyDragging.currentY);
+                    Vector2Int previousPosition = new Vector2Int(currentlySelected.currentX, currentlySelected.currentY);
 
-                    bool validMove = MoveTo(currentlyDragging, hitPosition.x, hitPosition.y);
-                    if (!validMove) { currentlyDragging.SetPosition(GetTileCenter(previousPosition.x, previousPosition.y)); }
+                    bool validMove = MoveTo(currentlySelected, hitPosition.x, hitPosition.y);
+                    if (!validMove) { currentlySelected.SetPosition(GetTileCenter(previousPosition.x, previousPosition.y)); }
 
-                    currentlyDragging = null;
+                    currentlySelected = null;
                     RemoveHighlightTiles();
                     return;
                 }
 
-                if (currentlyDragging == null && pieces[hitPosition.x, hitPosition.y] != null)
+                if (currentlySelected == null && pieces[hitPosition.x, hitPosition.y] != null)
                 {
                     // Is it our turn?
                     if ((pieces[hitPosition.x, hitPosition.y].team == 0 && isWhiteTurn) || (pieces[hitPosition.x, hitPosition.y].team == 1 && !isWhiteTurn))
                     {
-                        currentlyDragging = pieces[hitPosition.x, hitPosition.y];
+                        currentlySelected = pieces[hitPosition.x, hitPosition.y];
                         //Get a list of avaliable moves, and highlight tiles as well
-                        availableMoves = currentlyDragging.GetAvailableMoves(ref pieces, TILE_COUNT_X, TILE_COUNT_Y);
+                        availableMoves = currentlySelected.GetAvailableMoves(ref pieces, TILE_COUNT_X, TILE_COUNT_Y);
+                        //Get a list of special moves as well
+                        specialMove = currentlySelected.GetSpecialMoves(ref pieces, ref moveList, ref availableMoves);
 
                         HighlightTiles();
                     }
@@ -118,10 +134,10 @@ public class Board : MonoBehaviour
                 currentHover = -Vector2Int.one;
             }
 
-            if(currentlyDragging && Input.GetMouseButtonDown(0))
+            if(currentlySelected && Input.GetMouseButtonDown(0))
             {
-                currentlyDragging.SetPosition(GetTileCenter(currentlyDragging.currentX, currentlyDragging.currentY));
-                currentlyDragging = null;
+                currentlySelected.SetPosition(GetTileCenter(currentlySelected.currentX, currentlySelected.currentY));
+                currentlySelected = null;
                 RemoveHighlightTiles();
             }
         }
@@ -208,6 +224,7 @@ public class Board : MonoBehaviour
         p.type = type;
         p.team = team;
         p.GetComponent<MeshRenderer>().material = teamMaterials[team];
+        //p.GetComponent<MeshRenderer>().material = teamMaterials[((team == 0) ? 0 : 6) + ((int)type - 1)]; If there are unique materials for each piece.
 
         return p;
     }
@@ -277,8 +294,9 @@ public class Board : MonoBehaviour
         turnIndicator.gameObject.SetActive(true);
 
         //Field Reset
-        currentlyDragging = null;
-        availableMoves = new List<Vector2Int>();
+        currentlySelected = null;
+        availableMoves.Clear();
+        moveList.Clear();
 
         //Clean up
         for (int x = 0; x < TILE_COUNT_X; x++)
@@ -308,8 +326,48 @@ public class Board : MonoBehaviour
     }
     #endregion
 
+    #region Special Moves
+    private void ProcessSpecialMove()
+    {
+        if(specialMove == SpecialMove.EnPassant)
+        {
+            var newMove = moveList[moveList.Count - 1];
+            Piece myPawn = pieces[newMove[1].x, newMove[1].y];
+            var targetPawnPosition = moveList[moveList.Count - 2];
+            Piece enemyPawn = pieces[targetPawnPosition[1].x, targetPawnPosition[1].y];
+
+            if (myPawn.currentX == enemyPawn.currentX)
+            {
+                if(myPawn.currentY == enemyPawn.currentY - 1 || myPawn.currentY == enemyPawn.currentY + 1)
+                {
+                    if(enemyPawn.team == 0)
+                    {
+                        deadWhites.Add(enemyPawn);
+                        enemyPawn.SetScale(Vector3.one * 0.1f);
+                        enemyPawn.SetPosition(new Vector3(8 * tileSize, yOffset, -1 * tileSize)
+                            - bounds
+                            + new Vector3(tileSize / 2, 0, tileSize / 2)
+                            + (Vector3.forward * deathSpacing) * deadWhites.Count);
+                    }
+                    else
+                    {
+                        deadBlacks.Add(enemyPawn);
+                        enemyPawn.SetScale(Vector3.one * 0.1f);
+                        enemyPawn.SetPosition(new Vector3(-1 * tileSize, yOffset, 8 * tileSize)
+                            - bounds
+                            + new Vector3(tileSize / 2, 0, tileSize / 2)
+                            + (Vector3.back * deathSpacing) * deadBlacks.Count);
+                    }
+
+                    pieces[enemyPawn.currentX, enemyPawn.currentY] = null;
+                }
+            }
+        }
+    }
+    #endregion
+
     #region Operations
-    private bool ContainsValidMoves(ref List<Vector2Int> moves, Vector2 pos)
+    private bool ContainsValidMoves(ref List<Vector2Int> moves, Vector2Int pos)
     {
         for (int i = 0; i < moves.Count; i++)
         {
@@ -319,18 +377,9 @@ public class Board : MonoBehaviour
         return false;
     }
 
-    private Vector2Int LookupTileIndex(GameObject hitInfo)
-    {
-        for (int x = 0; x < TILE_COUNT_X; x++)
-            for (int y = 0; y < TILE_COUNT_Y; y++)
-                if(tiles[x,y] == hitInfo) { return new Vector2Int(x,y);}
-        
-        return -Vector2Int.one; //Invalid
-    }
-
     private bool MoveTo(Piece cp, int x, int y)
     {
-        if(!ContainsValidMoves(ref availableMoves, new Vector2(x, y))) { return false; }
+        if(!ContainsValidMoves(ref availableMoves, new Vector2Int(x, y))) { return false; }
 
         Vector2Int previousPosition = new Vector2Int(cp.currentX, cp.currentY);
 
@@ -374,8 +423,20 @@ public class Board : MonoBehaviour
         PositionSinglePiece(x, y);
 
         isWhiteTurn = !isWhiteTurn;
+        moveList.Add(new Vector2Int[] { previousPosition, new Vector2Int(x, y)});
+
+        ProcessSpecialMove();
 
         return true;
+    }
+
+    private Vector2Int LookupTileIndex(GameObject hitInfo)
+    {
+        for (int x = 0; x < TILE_COUNT_X; x++)
+            for (int y = 0; y < TILE_COUNT_Y; y++)
+                if(tiles[x,y] == hitInfo) { return new Vector2Int(x,y);}
+        
+        return -Vector2Int.one; //Invalid
     }
     #endregion
 }

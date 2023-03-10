@@ -50,6 +50,11 @@ public class Piece : MonoBehaviour
         return r;
     }
 
+    public virtual SpecialMove GetSpecialMoves(ref Piece[,] board, ref List<Vector2Int[]> moveList, ref List<Vector2Int> availableMoves)
+    {
+        return SpecialMove.None;
+    }
+
     public virtual void SetPosition(Vector3 position, bool force = false)
     {
         desiredPosition = position;
