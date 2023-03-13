@@ -32,6 +32,10 @@ public class Board : MonoBehaviour
     [SerializeField] private GameObject[] prefabs;
     [SerializeField] private Material[] teamMaterials;
 
+    [Header("Performance")]
+    [SerializeField] private float ticks;
+    private float timeUntilTick;
+    private bool hasUpdatedTurnIndicator;
     // Logic
     private Piece[,] pieces;
     [SerializeField] private Piece currentlySelected;
@@ -56,6 +60,7 @@ public class Board : MonoBehaviour
         isWhiteTurn = true;
         victoryScreen.SetActive(false);
         turnIndicator.gameObject.SetActive(true);
+        hasUpdatedTurnIndicator = false;
 
         GenerateAllTiles(tileSize, TILE_COUNT_X, TILE_COUNT_Y);
         SpawnAllPieces();
@@ -70,8 +75,11 @@ public class Board : MonoBehaviour
             return;
         }
 
-        if (isWhiteTurn) { turnIndicator.text = whiteTurnText; }
-        else { turnIndicator.text = blackTurnText; }
+        if (!hasUpdatedTurnIndicator)
+        {
+            if (isWhiteTurn) { turnIndicator.text = whiteTurnText; hasUpdatedTurnIndicator = true; }
+            else { turnIndicator.text = blackTurnText; hasUpdatedTurnIndicator = true; }
+        }
 
         RaycastHit info;
         Ray ray = currentCamera.ScreenPointToRay(Input.mousePosition);
@@ -121,24 +129,10 @@ public class Board : MonoBehaviour
                         //Get a list of special moves as well
                         specialMove = currentlySelected.GetSpecialMoves(ref pieces, ref moveList, ref availableMoves);
 
+                        PreventCheck();
                         HighlightTiles();
                     }
                 }
-            }
-        }
-        else
-        {
-            if (currentHover != -Vector2Int.one)
-            {
-                tiles[currentHover.x, currentHover.y].layer = (ContainsValidMoves(ref availableMoves, currentHover)) ? 8 : 6;
-                currentHover = -Vector2Int.one;
-            }
-
-            if(currentlySelected && Input.GetMouseButtonDown(0))
-            {
-                currentlySelected.SetPosition(GetTileCenter(currentlySelected.currentX, currentlySelected.currentY));
-                currentlySelected = null;
-                RemoveHighlightTiles();
             }
         }
     }
@@ -272,7 +266,7 @@ public class Board : MonoBehaviour
     }
     #endregion
 
-    #region CheckMate
+    #region Checkmate
     private void CheckMate(int team)
     {
         DisplayVictoryUI(team);
@@ -329,7 +323,7 @@ public class Board : MonoBehaviour
     #region Special Moves
     private void ProcessSpecialMove()
     {
-        if(specialMove == SpecialMove.EnPassant)
+        if (specialMove == SpecialMove.EnPassant)
         {
             var newMove = moveList[moveList.Count - 1];
             Piece myPawn = pieces[newMove[1].x, newMove[1].y];
@@ -338,9 +332,9 @@ public class Board : MonoBehaviour
 
             if (myPawn.currentX == enemyPawn.currentX)
             {
-                if(myPawn.currentY == enemyPawn.currentY - 1 || myPawn.currentY == enemyPawn.currentY + 1)
+                if (myPawn.currentY == enemyPawn.currentY - 1 || myPawn.currentY == enemyPawn.currentY + 1)
                 {
-                    if(enemyPawn.team == 0)
+                    if (enemyPawn.team == 0)
                     {
                         deadWhites.Add(enemyPawn);
                         enemyPawn.SetScale(Vector3.one * 0.1f);
@@ -363,6 +357,163 @@ public class Board : MonoBehaviour
                 }
             }
         }
+
+        if(specialMove == SpecialMove.Promotion)
+        {
+            Vector2Int[] lastMove = moveList[moveList.Count - 1];
+            Piece targetPawn = pieces[lastMove[1].x, lastMove[1].y];
+
+            if(targetPawn.type == PieceType.Pawn)
+            {
+                if(targetPawn.team == 0 && lastMove[1].y == 7)
+                {
+                    Piece newQueen = SpawnSinglePiece(PieceType.Queen, 0);
+                    newQueen.transform.position = pieces[lastMove[1].x, lastMove[1].y].transform.position;
+                    Destroy(pieces[lastMove[1].x, lastMove[1].y].gameObject);
+                    pieces[lastMove[1].x, lastMove[1].y] = newQueen;
+                    PositionSinglePiece(lastMove[1].x, lastMove[1].y);
+                }
+                if(targetPawn.team == 1 && lastMove[1].y == 0)
+                {
+                    Piece newQueen = SpawnSinglePiece(PieceType.Queen, 1);
+                    newQueen.transform.position = pieces[lastMove[1].x, lastMove[1].y].transform.position;
+                    Destroy(pieces[lastMove[1].x, lastMove[1].y].gameObject);
+                    pieces[lastMove[1].x, lastMove[1].y] = newQueen;
+                    PositionSinglePiece(lastMove[1].x, lastMove[1].y);
+                }
+            }
+        }
+
+        if (specialMove == SpecialMove.Castling)
+        {
+            Vector2Int[] lastMove = moveList[moveList.Count - 1];
+
+            //Left Rook
+            if (lastMove[1].x == 2)
+            {
+                if (lastMove[1].y == 0) //White Side
+                {
+                    Piece rook = pieces[0, 0];
+                    pieces[3, 0] = rook;
+                    PositionSinglePiece(3, 0);
+                    pieces[0, 0] = null;
+                }
+                else if (lastMove[1].y == 7)//Black Side
+                {
+                    Piece rook = pieces[0, 7];
+                    pieces[3, 7] = rook;
+                    PositionSinglePiece(3, 7);
+                    pieces[0, 7] = null;
+                }
+            }
+            //Right Rook
+            else if (lastMove[1].x == 6)
+            {
+                if (lastMove[1].y == 0) //White Side
+                {
+                    Piece rook = pieces[7, 0];
+                    pieces[5, 0] = rook;
+                    PositionSinglePiece(5, 0);
+                    pieces[7, 0] = null;
+                }
+                else if (lastMove[1].y == 7)//Black Side
+                {
+                    Piece rook = pieces[7, 7];
+                    pieces[5, 7] = rook;
+                    PositionSinglePiece(5, 7);
+                    pieces[7, 7] = null;
+                }
+            }
+        }
+    }
+
+    private void PreventCheck()
+    {
+        print("Prevent check begin");
+        Piece targetKing = null;
+        for (int x = 0; x < TILE_COUNT_X; x++)
+            for (int y = 0; y < TILE_COUNT_Y; y++)
+                if(pieces[x, y] != null)
+                    if (pieces[x, y].type == PieceType.King)
+                        if (pieces[x, y].team == currentlySelected.team)
+                            targetKing = pieces[x, y];
+
+        //Since we're sending in ref available move, we will be deleting moves that put us in check.
+        SimulateMoveForSinglePiece(currentlySelected, ref availableMoves, targetKing);
+
+        print("Simulate check end");
+    }
+
+    private void SimulateMoveForSinglePiece(Piece cp, ref List<Vector2Int> moves, Piece targetKing)
+    {
+        print("Simulate move begin");
+        #region Save Current Values
+        //Save the current values, to reset after the function call
+        int actualX = cp.currentX;
+        int actualY = cp.currentY;
+        List<Vector2Int> movesToRemove = new List<Vector2Int>();
+        #endregion
+
+        #region Simulation
+        //Go through all of the moves, simulate them and check if the king is in check
+        for (int i = 0; i < moves.Count; i++)
+        {
+            int simX = moves[i].x;
+            int simY = moves[i].y;
+
+            Vector2Int kingPosThisSim = new Vector2Int(targetKing.currentX, targetKing.currentY);
+            //Did we simulate the king's move?
+            if (cp.type == PieceType.King)
+                kingPosThisSim = new Vector2Int(simX, simY);
+
+            //Copy the [,] and not a reference
+            Piece[,] simulation = new Piece[TILE_COUNT_X, TILE_COUNT_Y];
+            List<Piece> simAttackingPieces = new List<Piece>();
+            for (int x = 0; x < TILE_COUNT_X; x++)
+                for (int y = 0; y < TILE_COUNT_Y; y++)
+                    if (pieces[x, y] != null)
+                    {
+                        simulation[x, y] = pieces[x, y];
+                        if (simulation[x, y].team != cp.team)
+                            simAttackingPieces.Add(simulation[x, y]);
+                    }
+
+            //Simulate that move
+            simulation[actualX, actualY] = null;
+            cp.currentX = simX;
+            cp.currentY = simY;
+            simulation[simX, simY] = cp;
+
+            //Did one of the pieces get taken down during the simulation
+            var deadPiece = simAttackingPieces.Find(c => c.currentX == simX && c.currentY == simY);
+            if (deadPiece != null)
+                simAttackingPieces.Remove(deadPiece);
+
+            //Get all the simulated attacking pieces moves
+            List<Vector2Int> simMoves = new List<Vector2Int>();
+            for (int a = 0; a < simAttackingPieces.Count; a++)
+            {
+                var pieceMoves = simAttackingPieces[a].GetAvailableMoves(ref simulation, TILE_COUNT_X, TILE_COUNT_Y);
+                for (int b = 0; b < pieceMoves.Count; b++)
+                    simMoves.Add(pieceMoves[b]);
+            }
+
+            //Is the king in trouble? If so, remove the move
+            if(ContainsValidMoves(ref simMoves, kingPosThisSim))
+                movesToRemove.Add(moves[i]);
+
+            //Restore the actual cp data
+            cp.currentX = actualX;
+            cp.currentY = actualY;
+        }
+        #endregion
+
+        #region Remove Available Move List
+        //Remove from the current available move list
+        for (int i = 0; i < movesToRemove.Count; i++)
+            moves.Remove(movesToRemove[i]);
+        #endregion
+        print("Simulate move end");
     }
     #endregion
 
@@ -377,39 +528,39 @@ public class Board : MonoBehaviour
         return false;
     }
 
-    private bool MoveTo(Piece cp, int x, int y)
+    private bool MoveTo(Piece p, int x, int y)
     {
         if(!ContainsValidMoves(ref availableMoves, new Vector2Int(x, y))) { return false; }
 
-        Vector2Int previousPosition = new Vector2Int(cp.currentX, cp.currentY);
+        Vector2Int previousPosition = new Vector2Int(p.currentX, p.currentY);
 
         // Is there another piece on the target position
         if(pieces[x, y] != null)
         {
-            Piece ocp = pieces[x, y];
+            Piece op = pieces[x, y];
 
-            if(cp.team == ocp.team) { return false; }
+            if(p.team == op.team) { return false; }
 
             // if it's the enemy team
             // change things here so an attack & death animation happens and stuff
-            if(ocp.team == 0)
+            if(op.team == 0)
             {
-                if(ocp.type == PieceType.King) { CheckMate(1); }
+                if(op.type == PieceType.King) { CheckMate(1); }
 
-                deadWhites.Add(ocp);
-                ocp.SetScale(Vector3.one * 0.1f);
-                ocp.SetPosition(new Vector3(8 * tileSize, yOffset, -1 * tileSize)
+                deadWhites.Add(op);
+                op.SetScale(Vector3.one * 0.1f);
+                op.SetPosition(new Vector3(8 * tileSize, yOffset, -1 * tileSize)
                     - bounds
                     + new Vector3(tileSize / 2, 0, tileSize / 2)
                     + (Vector3.forward * deathSpacing) * deadWhites.Count);
             }
             else
             {
-                if (ocp.type == PieceType.King) { CheckMate(0); }
+                if (op.type == PieceType.King) { CheckMate(0); }
 
-                deadBlacks.Add(ocp);
-                ocp.SetScale(Vector3.one * 0.1f);
-                ocp.SetPosition(new Vector3(-1 * tileSize, yOffset, 8 * tileSize)
+                deadBlacks.Add(op);
+                op.SetScale(Vector3.one * 0.1f);
+                op.SetPosition(new Vector3(-1 * tileSize, yOffset, 8 * tileSize)
                     - bounds
                     + new Vector3(tileSize / 2, 0, tileSize / 2)
                     + (Vector3.back * deathSpacing) * deadBlacks.Count);
@@ -417,12 +568,13 @@ public class Board : MonoBehaviour
 
         }
 
-        pieces[x, y] = cp;
+        pieces[x, y] = p;
         pieces[previousPosition.x, previousPosition.y] = null;
 
         PositionSinglePiece(x, y);
 
         isWhiteTurn = !isWhiteTurn;
+        hasUpdatedTurnIndicator = false;
         moveList.Add(new Vector2Int[] { previousPosition, new Vector2Int(x, y)});
 
         ProcessSpecialMove();

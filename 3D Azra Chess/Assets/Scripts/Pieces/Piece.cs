@@ -18,7 +18,7 @@ public class Piece : MonoBehaviour
     public int team;
     public int currentX;
     public int currentY;
-    public float smoothingMoveSpeed = 10;
+    public float smoothingMoveSpeed = 15;
     public float smoothingScaleSpeed = 10;
     public PieceType type;
 

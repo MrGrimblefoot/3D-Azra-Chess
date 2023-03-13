@@ -118,4 +118,4 @@ MonoBehaviour:
   teamMaterials:
   - {fileID: 2100000, guid: 24aa1bf6738082b6b9cd6c6f3a5790ba, type: 2}
   - {fileID: 2100000, guid: 3fed4e85a3c70c5cd8df71f2157829b4, type: 2}
-  currentlyDragging: {fileID: 0}
+  currentlySelected: {fileID: 0}
