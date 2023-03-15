@@ -118,7 +118,6 @@ public class Board : MonoBehaviour
 
                     currentlySelected = null;
                     RemoveHighlightTiles();
-                    teamPieces.Clear();
 
                     return;
                 }
@@ -136,37 +135,7 @@ public class Board : MonoBehaviour
 
                         PreventCheck(availableMoves);
 
-                        if (availableMoves.Count == 0)
-                        {
-                            //print("No available moves");
-
-                            teamPieces = new List<Piece>(); //Set up the list
-
-                            //Look through all of the pieces
-                            for (int x = 0; x < TILE_COUNT_X; x++)
-                                for (int y = 0; y < TILE_COUNT_Y; y++)
-                                    if(pieces[x, y] != null) //If there is a piece in that square
-                                        if(pieces[x, y].team == currentlySelected.team) //If it is on the selected piece's team
-                                        {
-                                            //print(pieces[x, y].name);
-                                            teamPieces.Add(pieces[x, y]);//Add it to the list
-                                            #region Check For Available Moves
-                                            //Get a list of avaliable moves
-                                            List<Vector2Int> newAvailableMoves = pieces[x, y].GetAvailableMoves(ref pieces, TILE_COUNT_X, TILE_COUNT_Y);
-                                            //Get a list of special moves as well
-                                            specialMove = pieces[x, y].GetSpecialMoves(ref pieces, ref moveList, ref newAvailableMoves);
-
-                                            PreventCheck(newAvailableMoves);
-                                            #endregion
-
-                                            if (newAvailableMoves.Count == 0) { teamPieces.Remove(pieces[x, y]); }//If it can't move, remove it from the list
-                                        }
-
-                            //If there is nothing in the list, then there is a stalemate
-                            if (teamPieces.Count == 0) { CheckMate(2); }
-                            else { print("Pieces can still move."); }
-                            //else { print("People can move"); teamPieces.Clear(); }
-                        }
+                        if (availableMoves.Count == 0) { CheckForStalemate(); }
 
                         HighlightTiles();
                     }
@@ -304,7 +273,7 @@ public class Board : MonoBehaviour
     }
     #endregion
 
-    #region Checkmate
+    #region End Game
     private void CheckMate(int team)
     {
         DisplayVictoryUI(team);
@@ -475,13 +444,15 @@ public class Board : MonoBehaviour
             }
         }
     }
+    #endregion
 
+    #region Check, Checkmate, & Stalemate
     private void PreventCheck(List<Vector2Int> inputAvailableMoves)
     {
         Piece targetKing = null;
         for (int x = 0; x < TILE_COUNT_X; x++)
             for (int y = 0; y < TILE_COUNT_Y; y++)
-                if(pieces[x, y] != null)
+                if (pieces[x, y] != null)
                     if (pieces[x, y].type == PieceType.King)
                         if (pieces[x, y].team == currentlySelected.team)
                             targetKing = pieces[x, y];
@@ -544,7 +515,7 @@ public class Board : MonoBehaviour
             }
 
             //Is the king in trouble? If so, remove the move
-            if(ContainsValidMoves(ref simMoves, kingPosThisSim))
+            if (ContainsValidMoves(ref simMoves, kingPosThisSim))
                 movesToRemove.Add(moves[i]);
 
             //Restore the actual cp data
@@ -601,7 +572,7 @@ public class Board : MonoBehaviour
                 //Since we're sending ref defending moves, we will be deleting moves that are putting us in check
                 SimulateMoveForSinglePiece(defendingPieces[i], ref defendingMoves, targetKing);
 
-                if(defendingMoves.Count != 0)
+                if (defendingMoves.Count != 0)
                     return false;
             }
 
@@ -609,6 +580,36 @@ public class Board : MonoBehaviour
         }
 
         return false;
+    }
+
+    private void CheckForStalemate()
+    {
+        teamPieces = new List<Piece>(); //Set up the list
+
+        //Look through all of the pieces
+        for (int x = 0; x < TILE_COUNT_X; x++)
+            for (int y = 0; y < TILE_COUNT_Y; y++)
+                if (pieces[x, y] != null) //If there is a piece in that square
+                    if (pieces[x, y].team == currentlySelected.team) //If it is on the selected piece's team
+                    {
+                        //print(pieces[x, y].name);
+                        teamPieces.Add(pieces[x, y]);//Add it to the list
+                        #region Check For Available Moves
+                        //Get a list of avaliable moves
+                        List<Vector2Int> newAvailableMoves = pieces[x, y].GetAvailableMoves(ref pieces, TILE_COUNT_X, TILE_COUNT_Y);
+                        //Get a list of special moves as well
+                        specialMove = pieces[x, y].GetSpecialMoves(ref pieces, ref moveList, ref newAvailableMoves);
+
+                        PreventCheck(newAvailableMoves);
+                        #endregion
+
+                        if (newAvailableMoves.Count == 0) { teamPieces.Remove(pieces[x, y]); }//If it can't move, remove it from the list
+                    }
+
+        //If there is nothing in the list, then there is a stalemate
+        if (teamPieces.Count == 0) { CheckMate(2); }
+        else { print("Pieces can still move."); teamPieces.Clear(); }
+        //else { print("People can move"); teamPieces.Clear(); }
     }
     #endregion
 
