@@ -24,6 +24,7 @@ public class Board : MonoBehaviour
     [SerializeField] private float deathSpacing = 0.3f;
     [SerializeField] private Vector3 boardCenter = Vector3.zero;
     [SerializeField] private GameObject victoryScreen;
+    [SerializeField] private GameObject stalemateScreen;
     [SerializeField] private TextMeshProUGUI turnIndicator;
     [SerializeField] private string whiteTurnText;
     [SerializeField] private string blackTurnText;
@@ -32,10 +33,9 @@ public class Board : MonoBehaviour
     [SerializeField] private GameObject[] prefabs;
     [SerializeField] private Material[] teamMaterials;
 
-    [Header("Performance")]
-    [SerializeField] private float ticks;
-    private float timeUntilTick;
+    //Performance
     private bool hasUpdatedTurnIndicator;
+
     // Logic
     private Piece[,] pieces;
     [SerializeField] private Piece currentlySelected;
@@ -52,6 +52,9 @@ public class Board : MonoBehaviour
     private bool isWhiteTurn;
     private SpecialMove specialMove;
     private List<Vector2Int[]> moveList = new List<Vector2Int[]>();
+
+    [Header("Debugging")]
+    [SerializeField] private List<Piece> teamPieces = new List<Piece>();
     #endregion
 
     #region MonoBehavior Functions
@@ -115,6 +118,8 @@ public class Board : MonoBehaviour
 
                     currentlySelected = null;
                     RemoveHighlightTiles();
+                    teamPieces.Clear();
+
                     return;
                 }
 
@@ -129,7 +134,40 @@ public class Board : MonoBehaviour
                         //Get a list of special moves as well
                         specialMove = currentlySelected.GetSpecialMoves(ref pieces, ref moveList, ref availableMoves);
 
-                        PreventCheck();
+                        PreventCheck(availableMoves);
+
+                        if (availableMoves.Count == 0)
+                        {
+                            //print("No available moves");
+
+                            teamPieces = new List<Piece>(); //Set up the list
+
+                            //Look through all of the pieces
+                            for (int x = 0; x < TILE_COUNT_X; x++)
+                                for (int y = 0; y < TILE_COUNT_Y; y++)
+                                    if(pieces[x, y] != null) //If there is a piece in that square
+                                        if(pieces[x, y].team == currentlySelected.team) //If it is on the selected piece's team
+                                        {
+                                            //print(pieces[x, y].name);
+                                            teamPieces.Add(pieces[x, y]);//Add it to the list
+                                            #region Check For Available Moves
+                                            //Get a list of avaliable moves
+                                            List<Vector2Int> newAvailableMoves = pieces[x, y].GetAvailableMoves(ref pieces, TILE_COUNT_X, TILE_COUNT_Y);
+                                            //Get a list of special moves as well
+                                            specialMove = pieces[x, y].GetSpecialMoves(ref pieces, ref moveList, ref newAvailableMoves);
+
+                                            PreventCheck(newAvailableMoves);
+                                            #endregion
+
+                                            if (newAvailableMoves.Count == 0) { teamPieces.Remove(pieces[x, y]); }//If it can't move, remove it from the list
+                                        }
+
+                            //If there is nothing in the list, then there is a stalemate
+                            if (teamPieces.Count == 0) { CheckMate(2); }
+                            else { print("Pieces can still move."); }
+                            //else { print("People can move"); teamPieces.Clear(); }
+                        }
+
                         HighlightTiles();
                     }
                 }
@@ -274,9 +312,18 @@ public class Board : MonoBehaviour
 
     private void DisplayVictoryUI(int winningTeam)
     {
-        victoryScreen.SetActive(true);
-        turnIndicator.gameObject.SetActive(false);
-        victoryScreen.transform.GetChild(winningTeam).gameObject.SetActive(true);
+        if(winningTeam != 2)
+        {
+            victoryScreen.SetActive(true);
+            turnIndicator.gameObject.SetActive(false);
+            victoryScreen.transform.GetChild(winningTeam).gameObject.SetActive(true);
+        }
+        else
+        {
+            stalemateScreen.SetActive(true);
+            turnIndicator.gameObject.SetActive(true);
+            stalemateScreen.transform.GetChild(0).gameObject.SetActive(true);
+        }
     }
 
     public void OnRestartButton()
@@ -284,7 +331,9 @@ public class Board : MonoBehaviour
         //Take care of UI
         victoryScreen.transform.GetChild(0).gameObject.SetActive(false);
         victoryScreen.transform.GetChild(1).gameObject.SetActive(false);
+        stalemateScreen.transform.GetChild(0).gameObject.SetActive(false);
         victoryScreen.SetActive(false);
+        stalemateScreen.SetActive(false);
         turnIndicator.gameObject.SetActive(true);
 
         //Field Reset
@@ -427,9 +476,8 @@ public class Board : MonoBehaviour
         }
     }
 
-    private void PreventCheck()
+    private void PreventCheck(List<Vector2Int> inputAvailableMoves)
     {
-        print("Prevent check begin");
         Piece targetKing = null;
         for (int x = 0; x < TILE_COUNT_X; x++)
             for (int y = 0; y < TILE_COUNT_Y; y++)
@@ -439,14 +487,11 @@ public class Board : MonoBehaviour
                             targetKing = pieces[x, y];
 
         //Since we're sending in ref available move, we will be deleting moves that put us in check.
-        SimulateMoveForSinglePiece(currentlySelected, ref availableMoves, targetKing);
-
-        print("Simulate check end");
+        SimulateMoveForSinglePiece(currentlySelected, ref inputAvailableMoves, targetKing);
     }
 
     private void SimulateMoveForSinglePiece(Piece cp, ref List<Vector2Int> moves, Piece targetKing)
     {
-        print("Simulate move begin");
         #region Save Current Values
         //Save the current values, to reset after the function call
         int actualX = cp.currentX;
@@ -513,7 +558,57 @@ public class Board : MonoBehaviour
         for (int i = 0; i < movesToRemove.Count; i++)
             moves.Remove(movesToRemove[i]);
         #endregion
-        print("Simulate move end");
+    }
+
+    private bool CheckForCheckmate()
+    {
+        var lastMove = moveList[moveList.Count - 1];
+        int targetTeam = (pieces[lastMove[1].x, lastMove[1].y].team == 0) ? 1 : 0;
+
+        List<Piece> attackingPieces = new List<Piece>();
+        List<Piece> defendingPieces = new List<Piece>();
+        Piece targetKing = null;
+        for (int x = 0; x < TILE_COUNT_X; x++)
+            for (int y = 0; y < TILE_COUNT_Y; y++)
+                if (pieces[x, y] != null)
+                {
+                    if (pieces[x, y].team == targetTeam)
+                    {
+                        defendingPieces.Add(pieces[x, y]);
+                        if (pieces[x, y].type == PieceType.King)
+                            targetKing = pieces[x, y];
+                    }
+                    else
+                        attackingPieces.Add(pieces[x, y]);
+                }
+
+        //Is the king being attacked right now?
+        List<Vector2Int> currentAvailableMoves = new List<Vector2Int>();
+        for (int i = 0; i < attackingPieces.Count; i++)
+        {
+            var pieceMoves = attackingPieces[i].GetAvailableMoves(ref pieces, TILE_COUNT_X, TILE_COUNT_Y);
+            for (int b = 0; b < pieceMoves.Count; b++)
+                currentAvailableMoves.Add(pieceMoves[b]);
+        }
+
+        //Are we in check?
+        if (ContainsValidMoves(ref currentAvailableMoves, new Vector2Int(targetKing.currentX, targetKing.currentY)))
+        {
+            // King is under attack, can we move something to help him?
+            for (int i = 0; i < defendingPieces.Count; i++)
+            {
+                List<Vector2Int> defendingMoves = defendingPieces[i].GetAvailableMoves(ref pieces, TILE_COUNT_X, TILE_COUNT_Y);
+                //Since we're sending ref defending moves, we will be deleting moves that are putting us in check
+                SimulateMoveForSinglePiece(defendingPieces[i], ref defendingMoves, targetKing);
+
+                if(defendingMoves.Count != 0)
+                    return false;
+            }
+
+            return true; //Checkmate exit
+        }
+
+        return false;
     }
     #endregion
 
@@ -528,18 +623,19 @@ public class Board : MonoBehaviour
         return false;
     }
 
-    private bool MoveTo(Piece p, int x, int y)
+    private bool MoveTo(Piece cp, int x, int y)
     {
+        //If current piece doesn't have any available moves
         if(!ContainsValidMoves(ref availableMoves, new Vector2Int(x, y))) { return false; }
 
-        Vector2Int previousPosition = new Vector2Int(p.currentX, p.currentY);
+        Vector2Int previousPosition = new Vector2Int(cp.currentX, cp.currentY);
 
         // Is there another piece on the target position
         if(pieces[x, y] != null)
         {
             Piece op = pieces[x, y];
 
-            if(p.team == op.team) { return false; }
+            if(cp.team == op.team) { return false; }
 
             // if it's the enemy team
             // change things here so an attack & death animation happens and stuff
@@ -568,7 +664,7 @@ public class Board : MonoBehaviour
 
         }
 
-        pieces[x, y] = p;
+        pieces[x, y] = cp;
         pieces[previousPosition.x, previousPosition.y] = null;
 
         PositionSinglePiece(x, y);
@@ -578,6 +674,8 @@ public class Board : MonoBehaviour
         moveList.Add(new Vector2Int[] { previousPosition, new Vector2Int(x, y)});
 
         ProcessSpecialMove();
+
+        if (CheckForCheckmate()) { CheckMate(cp.team); }
 
         return true;
     }
