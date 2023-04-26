@@ -7,6 +7,7 @@ public class GameUI : MonoBehaviour
     public static GameUI Instance { set; get; }
 
     private Animator anim;
+    [SerializeField] private GameObject board;
 
     private void Awake()
     {
@@ -17,6 +18,7 @@ public class GameUI : MonoBehaviour
     public void OnLocalGameButton()
     {
         anim.SetTrigger("InGame");
+        board.SetActive(true);
     }
 
     public void OnOnlineGameButton()
@@ -42,5 +44,10 @@ public class GameUI : MonoBehaviour
     public void OnHostBackButton()
     {
         anim.SetTrigger("OnlineMenu");
+    } 
+    
+    public void OnExitGame()
+    {
+        Application.Quit();
     }
 }

@@ -33,19 +33,23 @@ public class Board : MonoBehaviour
     [SerializeField] private GameObject[] prefabs;
     [SerializeField] private Material[] teamMaterials;
 
+    [Header("Camera")]
+    [SerializeField] private Camera whiteCamera;
+    [SerializeField] private Camera blackCamera;
+    private Camera currentCamera;
+
     //Performance
     private bool hasUpdatedTurnIndicator;
 
     // Logic
     private Piece[,] pieces;
-    [SerializeField] private Piece currentlySelected;
+    private Piece currentlySelected;
     private List<Vector2Int> availableMoves = new List<Vector2Int>();
     private List<Piece> deadWhites = new List<Piece>();
     private List<Piece> deadBlacks = new List<Piece>();
     private const int TILE_COUNT_X = 8;
     private const int TILE_COUNT_Y = 8;
     private GameObject[,] tiles;
-    private Camera currentCamera;
     private Vector2Int currentHover;
     private Vector2Int hitPosition;
     private Vector3 bounds;
@@ -64,6 +68,7 @@ public class Board : MonoBehaviour
         victoryScreen.SetActive(false);
         turnIndicator.gameObject.SetActive(true);
         hasUpdatedTurnIndicator = false;
+        currentCamera = whiteCamera;
 
         GenerateAllTiles(tileSize, TILE_COUNT_X, TILE_COUNT_Y);
         SpawnAllPieces();
@@ -72,12 +77,6 @@ public class Board : MonoBehaviour
 
     private void Update()
     {
-        if (!currentCamera)
-        {
-            currentCamera = Camera.main;
-            return;
-        }
-
         if (!hasUpdatedTurnIndicator)
         {
             if (isWhiteTurn) { turnIndicator.text = whiteTurnText; hasUpdatedTurnIndicator = true; }
@@ -671,6 +670,8 @@ public class Board : MonoBehaviour
         PositionSinglePiece(x, y);
 
         isWhiteTurn = !isWhiteTurn;
+        if (isWhiteTurn) { currentCamera = whiteCamera; }
+        else { currentCamera = blackCamera; }
         hasUpdatedTurnIndicator = false;
         moveList.Add(new Vector2Int[] { previousPosition, new Vector2Int(x, y)});
 
