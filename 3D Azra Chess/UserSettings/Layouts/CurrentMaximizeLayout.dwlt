@@ -226,9 +226,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: fe6a0000
-      m_LastClickedID: 27390
-      m_ExpandedIDs: 34fbffff
+      m_SelectedIDs: a26a0000
+      m_LastClickedID: 27298
+      m_ExpandedIDs: 62cffeff5ab3ffffa2ecffff34fbffffc86900005e6a00006c6a0000a26a0000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -244,7 +244,7 @@ MonoBehaviour:
         m_IsRenaming: 0
         m_OriginalEventType: 11
         m_IsRenamingFilename: 0
-        m_ClientGUIView: {fileID: 7}
+        m_ClientGUIView: {fileID: 5}
       m_SearchString: 
     m_ExpandedScenes: []
     m_CurrenRootInstanceID: 0
@@ -390,7 +390,7 @@ MonoBehaviour:
       containerId: overlay-container--right
       floating: 0
       collapsed: 0
-      displayed: 1
+      displayed: 0
       snapOffset: {x: 0, y: 0}
       snapOffsetDelta: {x: 0, y: 0}
       snapCorner: 0
@@ -506,9 +506,9 @@ MonoBehaviour:
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: 251.0946, y: 3037.8003, z: 4187.442}
+    m_Target: {x: 1600.8833, y: 1619.9652, z: -26.493408}
     speed: 2
-    m_Value: {x: 251.0946, y: 3037.8003, z: 4187.442}
+    m_Value: {x: 1600.8833, y: 1619.9652, z: -26.493408}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -555,17 +555,17 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: -0.02399242, y: 0.020992387, z: 0.0005039164, w: 0.99949193}
+    m_Target: {x: 0.010499381, y: 0.008999356, z: -0.000094493844, w: 0.99990463}
     speed: 2
-    m_Value: {x: 0.023992417, y: -0.020992385, z: -0.0005039164, w: -0.9994919}
+    m_Value: {x: 0.010499379, y: 0.008999354, z: -0.00009449382, w: 0.9999044}
   m_Size:
-    m_Target: 3063.9666
+    m_Target: 827.1455
     speed: 2
-    m_Value: 3063.9666
+    m_Value: 827.1455
   m_Ortho:
-    m_Target: 1
+    m_Target: 0
     speed: 2
-    m_Value: 1
+    m_Value: 0
   m_CameraSettings:
     m_Speed: 1
     m_SpeedNormalized: 0.5
@@ -643,7 +643,7 @@ MonoBehaviour:
   - {fileID: 13}
   - {fileID: 14}
   m_Selected: 1
-  m_LastSelected: 2
+  m_LastSelected: 0
 --- !u!114 &11
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -715,22 +715,22 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Animations
+    - Assets/Imported Assets/Chess Set/Materials
     m_Globs: []
     m_OriginalText: 
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets/Animations
+  - Assets/Imported Assets/Chess Set/Materials
   m_LastFoldersGridSize: -1
   m_LastProjectPath: E:\Unity Projects\Personal Projects\3D-Azra-Chess\3D Azra Chess
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: 106e0000
-    m_LastClickedID: 28176
-    m_ExpandedIDs: 00000000f66d000000ca9a3b
+    m_SelectedIDs: 7c720000
+    m_LastClickedID: 29308
+    m_ExpandedIDs: 00000000386e0000506e00003672000000ca9a3b
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -758,7 +758,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 00000000f66d0000
+    m_ExpandedIDs: 00000000386e0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -783,10 +783,10 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs: fe6a0000
-    m_LastClickedInstanceID: 27390
+    m_SelectedInstanceIDs: a26a0000
+    m_LastClickedInstanceID: 27298
     m_HadKeyboardFocusLastEvent: 1
-    m_ExpandedInstanceIDs: c623000068730000
+    m_ExpandedInstanceIDs: c623000068730000c66f0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -845,7 +845,7 @@ MonoBehaviour:
     m_SaveData: []
   m_LockTracker:
     m_IsLocked: 0
-  m_LastSelectedObjectID: 27390
+  m_LastSelectedObjectID: -24356
 --- !u!114 &14
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -899,11 +899,11 @@ MonoBehaviour:
     - e00: 1
       e01: 0
       e02: 0
-      e03: 55.5
+      e03: 0
       e10: 0
       e11: 1
       e12: 0
-      e13: 46
+      e13: 0
       e20: 0
       e21: 0
       e22: 1
@@ -949,8 +949,8 @@ MonoBehaviour:
     y: 0
     width: 454
     height: 947
-  m_MinSize: {x: 276, y: 71}
-  m_MaxSize: {x: 4001, y: 4021}
+  m_MinSize: {x: 275, y: 50}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 16}
   m_Panes:
   - {fileID: 16}
